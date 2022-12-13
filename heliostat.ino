@@ -16,7 +16,7 @@ struct Motor {
   int pin_signal_A;
   int pin_signal_B;
 
-  int signal_A;
+  unsigned long signal_A;
   int signal_B;
 
   // direction switches
@@ -29,7 +29,7 @@ struct Motor {
 
 const unsigned int MOTOR_TURNS = 512;
 
-const double M_DEG_RATIO = 360.0 / 512.0;
+const double M_DEG_RATIO = 360.0 / MOTOR_TURNS;
 
 const double RPD = 0.01745329;
 
@@ -62,11 +62,11 @@ struct Motor altitude = {
   0
 };
 
-void altitude_signal_A() {
+void IRAM_ATTR altitude_signal_A() {
   altitude.signal_A++;
 }
 
-void altitude_signal_B() {
+void IRAM_ATTR altitude_signal_B() {
   altitude.signal_B++;
 }
 
@@ -81,11 +81,11 @@ struct Motor azimuth = {
   0
 };
 
-void azimuth_signal_A() {
+void IRAM_ATTR azimuth_signal_A() {
   azimuth.signal_A++;
 }
 
-void azimuth_signal_B() {
+void IRAM_ATTR azimuth_signal_B() {
   azimuth.signal_B++;
 }
 
@@ -131,11 +131,11 @@ void setup() {
   setup_motor(&altitude);
   setup_motor(&azimuth);
 
-  attachInterrupt(digitalPinToInterrupt(altitude.pin_signal_A), altitude_signal_A, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(altitude.pin_signal_B), altitude_signal_B, CHANGE);
+  attachInterrupt(altitude.pin_signal_A, altitude_signal_A, CHANGE);
+  attachInterrupt(altitude.pin_signal_B, altitude_signal_B, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(azimuth.pin_signal_A), azimuth_signal_A, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(azimuth.pin_signal_B), azimuth_signal_B, CHANGE);
+  attachInterrupt(azimuth.pin_signal_A, azimuth_signal_A, CHANGE);
+  attachInterrupt(azimuth.pin_signal_B, azimuth_signal_B, CHANGE);
 
   Serial.begin(115200);
   Serial.println("Starting up!");
@@ -223,8 +223,8 @@ void sunpos() {
   double al = rotation(&altitude);
 
   // calculate desired azimuth and altitude
-  double desired_az = (sun_az - heliostat.azimuth) / 2.0;
-  double desired_al = (sun_al - heliostat.altitude) / 2.0; 
+  double desired_az = (heliostat.azimuth - sun_az) / 2.0 + sun_az;
+  double desired_al = (heliostat.altitude - sun_al) / 2.0 + sun_al; 
 
   // check which direction to move in
   
